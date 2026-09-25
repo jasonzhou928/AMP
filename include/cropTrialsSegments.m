@@ -10,6 +10,11 @@ totalLength = length(markerHeader);
 markerTableTemp = markerStruct.(tempMarker);
 
 numSegments = ceil(totalLength/cropLength);
+markerNames = fieldnames(markerStruct);
+markerNamesDiff = setdiff(markerSet(:),markerNames);
+markerNamesAll = [markerNames;markerNamesDiff];
+nMarkers = numel(markerNamesAll);
+markerExists = ismember(markerNamesAll, markerNames);
 
 for i = 1:numSegments
     i_start = (i-1)*cropLength+1;
@@ -20,26 +25,18 @@ for i = 1:numSegments
     end
 
     SegName = ['Seg_',num2str(i)];
-    markerStructLists.(SegName) = markerStruct;
-    markerNames = fieldnames(markerStructLists.(SegName));
-    markerNamesDiff = setdiff(markerSet,markerNames);
-    markerNamesAll = [markerNames;markerNamesDiff'];
-
-    for j = 1:length(markerNamesAll)
+    segmentValues = cell(nMarkers,1);
+    for j = 1:nMarkers
         markerName = markerNamesAll{j};
-        if any(strcmp(markerNames,markerName))
-            markerTable = markerStructLists.(SegName).(markerName);
-            markerTable = markerTable(i_start:i_end,:);
-            markerStructLists.(SegName).(markerName) = markerTable;
+        if markerExists(j)
+            segmentValues{j} = markerStruct.(markerName)(i_start:i_end,:);
         else
-            markerTable = markerTableTemp;
-            markerTable = markerTable(i_start:i_end,:);
-            markerTable.x = nan(height(markerTable), 1);
-            markerTable.y = nan(height(markerTable), 1);
-            markerTable.z = nan(height(markerTable), 1);
-            markerStructLists.(SegName).(markerName) = markerTable;
+            markerTable = markerTableTemp(i_start:i_end,:);
+            markerTable{:,2:4} = NaN;
+            segmentValues{j} = markerTable;
         end
     end
+    markerStructLists.(SegName) = cell2struct(segmentValues,markerNamesAll,1);
 end
 
 

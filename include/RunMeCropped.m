@@ -1,14 +1,18 @@
  %%  GAP FILLING AND NEW C3D GENERATION
 close all; clear; clc;
+addpath(genpath('MoCapTools'))
 %%  FILE INFORMATION
-filePath = 'C:\Users\szhou357\GaTech Dropbox\Sixu Zhou\Ossur Teaming\Data\CAREN\PKP04\05_29_25\mocap';
+filePath = 'D:\Users\SixuZhou\MoCap Data';
 % filePath = 'C:\Users\szhou357\GaTech Dropbox\Sixu Zhou\Ossur Teaming\Data\CAREN\PKP05\PKP05_06_06_25\mocap';
-StaticTrialName = 'Static03.c3d';
-skiplist = {''};
+StaticTrialName = 'S2_Static.c3d';
+skiplist = {};
 
+qualisys_flag = 1; %flag set to true when processing qualisys c3d trials (convert U to C)
 jp_flag = 1; %flag to trigger preprocess section - where fix labels and jumps
-progressBarEnable = 1; %flag to turn on progress bar; if you want to use this, you need to install "Instrument Control" Add-Ons
-multiSubs = 1; %flag if you have more than one subject in the trial
+progressBarEnable = 0; %flag to turn on progress bar; if you want to use this, you need to install "Instrument Control" Add-Ons
+workerVerbose = 0; % 0 suppresses detailed output from parfor workers
+parallelProgressEnable = 1; % clean built-in overall segment progress
+multiSubs = 0; %flag if you have more than one subject in the trial
 SubjectName = 'PK_L';
 
 %%  DEFINE FILES TO PROCESS
@@ -25,10 +29,10 @@ SubjectName = 'PK_L';
 
 %%  PARAMETERS
 
-cf = 200; % collection frequency = 200 Hz
-jumpThreshold = 12; % How far does have to jump in a s ingle frame to be flagged?
-jumpSpeedThreshold = 7.5; % How fast does have to jump in a single frame to be flagged?
-gap_th = 15; % gap detection threshold
+cf = 125; % collection frequency = 200 Hz
+jumpThreshold = 15; % How far does have to jump in a s ingle frame to be flagged?
+jumpSpeedThreshold = 10; % How fast does have to jump in a single frame to be flagged?
+gap_th = 18; % gap detection threshold
 check_th = 1;
 patternCheckth = 5;
 direction = {'fw','bw'}; % gap detection direction
@@ -38,148 +42,29 @@ coordinates = {'x','y','z'};
 
 %%  DEFINE RIGID BODY MARKER CLUSTERS
 
-% % RIGHTY PK FULLBODY CLUSTERS
-% clusters = {
-%     {'C7', 'SSTRN', 'RSCAP','CLAV','T10','LSHO','RSHO'}; % torso
-%     {'RPSIS', 'LASIS', 'RASIS', 'LPSIS','LGSIS','RGSIS'}; % pelvis
-% 
-%     {'LLARM','LLELB','LMELB','LMARM','LSHO'}; % left upper arm
-%     {'LLFARM','LLELB','LMELB','LLWST'}; % left forearm arm1
-%     {'LMFARM','LLELB','LMELB','LMWST'}; % left forearm arm2
-%     {'LMFARM','LLFARM','LLWST','LMWST'}; % left forearm arm3
-%     {'LFIN2','LFIN5','LMWST','LLWST'}; % left hand
-% 
-%     {'RLARM','RLELB','RMELB','RMARM','RSHO'}; % left upper arm
-%     {'RLFARM','RLELB','RMELB','RLWST'}; % right forearm arm1
-%     {'RMFARM','RLELB','RMELB','RMWST'}; % right forearm arm2
-%     {'RLFARM','RMFARM','RLWST','RMWST'}; % right forearm arm3
-%     {'RFIN2','RFIN5','RMWST','RLWST'}; % right hand
-% 
-%     {'LPTHI', 'LDTHI','LATHI','LLKNE', 'LMKNE'}; %  left femur
-%     {'LPTIB', 'LDTIB','LATIB','LMANK','LLANK'}; % left tibia
-%     {'LHEE', 'LMT0','LMT1','LMT2','LMT5'}; %left foot
-% 
-%     {'RPTHI', 'RDTHI','RATHI','RLKNE', 'RMKNE'}; %  right femur
-%     {'RLKNE', 'RMKNE','RSHANK','RMANK','RLANK'}; % right tibia
-%     {'RHEE', 'RMT0','RMT1','RMT2','RMT5'}; %right foot
-% 
-%     {'platform1','platform2','platform3','platform4','platform5'}; % platform
-% };
-
-
-% % RIGHTY PK FULLBODY CLUSTERS
-% clusters = {
-%     {'C7', 'SSTRN', 'RSCAP','CLAV','T10','LSHO','RSHO'}; % torso
-%     {'RPSIS', 'LASIS', 'RASIS', 'LPSIS','LGSIS','RGSIS'}; % pelvis
-% 
-%     {'LLUARM','LLELB','LMELB','LMUARM','LSHO'}; % left upper arm
-%     {'LLFARM','LLELB','LMELB','LLWST'}; % left forearm arm1
-%     {'LMFARM','LLELB','LMELB','LMWST'}; % left forearm arm2
-%     {'LFIN2','LFIN5','LMWST','LLWST'}; % left hand
-% 
-%     {'RLUARM','RLELB','RMELB','RMUARM','RSHO'}; % left upper arm
-%     {'RLFARM','RLELB','RMELB','RLWST'}; % right forearm arm1
-%     {'RMFARM','RLELB','RMELB','RMWST'}; % right forearm arm2
-%     {'RFIN2','RFIN5','RMWST','RLWST'}; % right hand
-% 
-%     {'LPTHI', 'LDTHI','LATHI','LLKNE', 'LMKNE'}; %  left femur
-%     {'LPTIB', 'LDTIB','LATIB','LMANK','LLANK'}; % left tibia
-%     {'LHEE','LMT1','LMT2','LMT5'}; %left foot
-%     {'LHEE','LMT1','LMT2','LMT5','LLANK','LMANK'}; %left foot
-% 
-%     {'RPTHI', 'RDTHI','RATHI','RLKNE', 'RMKNE'}; %  right femur
-%     {'RLKNE', 'RMKNE','RPTIB','RDTIB','RMANK','RLANK'}; % right tibia
-%     {'RHEE','RMT1','RMT2','RMT5'}; %right foot
-%     {'RHEE','RMT1','RMT2','RMT5','RLANK','RMANK'}; %right foot
-% 
-%     {'platform1','platform2','platform3','platform4','platform5'}; % platform
-% };
-
-% LEFTY PK FULLBODY CLUSTERS
+% % LEFTY PK FULLBODY CLUSTERS
 clusters = {
-    {'C7', 'SSTRN', 'RSCAP','CLAV','T10','LSHO','RSHO'}; % torso
-    {'RPSIS', 'LASIS', 'RASIS', 'LPSIS','LGSIS','RGSIS'}; % pelvis
-    {'LFHD','RFHD','LBHD','RBHD','C7'}; % head
-
-    {'LLUARM','LDUARM','LLELB','LMELB','LMUARM','LSHO'}; % left upper arm
-    {'LLFARM','LLELB','LMELB','LLWST'}; % left forearm arm1
-    {'LLFARM','LMFARM','LMWST','LLWST','LLELB'}; % left forearm arm3
-    {'LMFARM','LLELB','LMELB','LMWST'}; % left forearm arm2
-    {'LFIN2','LFIN5','LFIN0','LMWST','LLWST'}; % left hand
-
-    {'RLUARM','RDUARM','RLELB','RMELB','RMUARM','RSHO'}; % left upper arm
-    {'RLFARM','RLELB','RMELB','RLWST'}; % right forearm arm1
-    {'RMFARM','RLELB','RMELB','RMWST'}; % right forearm arm2
-    {'RFIN2','RFIN5','RFIN0','RMWST','RLWST'}; % right hand
-
-    {'LPTHI', 'LDTHI','LATHI','LLKNE', 'LMKNE','LGSIS'}; %  left femur
-    {'LPTIB', 'LDTIB','LMANK','LLANK','LLKNE', 'LMKNE'}; % left tibia
-    % {'LHEE','LMT1','LMT2','LMT5'}; %left foot
-    {'LHEE','LMT1','LMT2','LMT5','LLANK','LMANK'}; %left foot
-
-    {'RPTHI', 'RDTHI','RATHI','RLKNE', 'RMKNE','RGSIS'}; %  right femur
-    {'RLKNE', 'RMKNE','RATIB','RPTIB','RDTIB','RMANK','RLANK'}; % right tibia
-    % {'RHEE','RMT1','RMT2','RMT5'}; %right foot
-    {'RHEE','RMT1','RMT2','RMT5','RLANK','RMANK'}; %right foot
-
-    {'platform1','platform2','platform3','platform4','platform5'}; % platform
-};
-
-% % RIGHTY PK FULLBODY CLUSTERS
-% clusters = {
-%     {'C7', 'SSTRN', 'RSCAP','CLAV','T10','LSHO','RSHO'}; % torso
-%     {'RPSIS', 'LASIS', 'RASIS', 'LPSIS','LGSIS','RGSIS'}; % pelvis
-%     {'LFHD','RFHD','LBHD','RBHD','C7'}; % head
-% 
-%     {'LLUARM','LDUARM','LLELB','LMELB','LMUARM','LSHO'}; % left upper arm
-%     {'LLFARM','LLELB','LMELB','LLWST'}; % left forearm arm1
-%     {'LMFARM','LLELB','LMELB','LMWST'}; % left forearm arm2
-%     {'LFIN2','LFIN5','LFIN0','LMWST','LLWST'}; % left hand
-% 
-%     {'RLUARM','RDUARM','RLELB','RMELB','RMUARM','RSHO'}; % left upper arm
-%     {'RLFARM','RLELB','RMELB','RLWST'}; % right forearm arm1
-%     {'RMFARM','RLELB','RMELB','RMWST'}; % right forearm arm2
-%     {'RFIN2','RFIN5','RFIN0','RMWST','RLWST'}; % right hand
-% 
-%     {'LPTHI', 'LDTHI','LATHI','LLKNE', 'LMKNE','LGSIS'}; %  left femur
-%     {'LATIB','LPTIB', 'LDTIB','LMANK','LLANK','LLKNE', 'LMKNE'}; % left tibia
-%     {'LHEE','LMT1','LMT2','LMT5','LLANK','LMANK'}; %left foot
-% 
-%     {'RPTHI', 'RDTHI','RATHI','RLKNE', 'RMKNE','RGSIS'}; %  right femur
-%     {'RLKNE', 'RMKNE','RPTIB','RDTIB','RMANK','RLANK'}; % right tibia
-%     {'RHEE','RMT1','RMT2','RMT5','RLANK','RMANK'}; %right foot
-% 
-%     {'platform1','platform2','platform3','platform4','platform5'}; % platform
-% };
-
+    {'R_IAS', 'L_IAS', 'R_IPS', 'L_IPS','RGTR','LGTR'}; % pelvis
+    {'R_TH1','R_TH2','R_TH3','R_TH4','R_FLE','R_FME','RGTR'}; %r_femur
+    {'R_SK1','R_SK2','R_SK3','R_SK4','R_FAL','R_TAM','R_FLE'}; %r_tibia
+    {'R_FCC','R_FM5','R_FM2','R_FM1','R_FAL','R_TAM'} %r_foot
+    {'L_TH1','L_TH2','L_TH3','L_TH4','L_FLE','L_FME','LGTR'}; %l_femur
+    {'L_SK1','L_SK2','L_SK3','L_SK4','L_FAL','L_TAM','L_FLE'}; %l_tibia
+    {'L_FCC','L_FM5','L_FM2','L_FM1','L_FAL','L_TAM'} %l_foot
+    {'RMW1','RMW2','RMW3','R_FM1','R_FM5','R_FM2'}; %r_moonwalkers
+    {'LMW1','LMW2','LMW3','L_FM1','L_FM5','L_FM2'}; %l_moonwalkers
+    };
 
 clusters_jump_threshold = {
-    {60}; % torso 
-    {50}; % pelvis
-    {50}; % head
-
-    {40}; % left upper arm
-    {30}; % left forearm arm1
-    {30}; % left forearm arm3
-    {30}; % left forearm arm2
-    {30}; % left hand
-
-    {40}; % right upper arm
-    {30}; % right forearm arm1
-    {30}; % right forearm arm2
-    {30}; % right hand
-
-    {30}; %  left femur
-    {30}; % left tibia
-    {30}; %left foot
-    {30}; %left foot
-
-    {30}; %  right femur
-    {30}; % right tibia
-    {30}; %right foot
-    {30}; %left foot
-
-    {25}; % platform
+    {40}; % pelvis
+    {35}; %r_femur
+    {35}; %r_tibia
+    {35} %r_foot
+    {35}; %l_femur
+    {35}; %l_tibia
+    {35} %l_foot
+    {35}; %r_moonwalkers
+    {35}; %l_moonwalkers
 };
 
 markerSet = unique([clusters{:}]);
@@ -194,6 +79,7 @@ if jp_flag
     allFileNames = {allFiles(:).name};
     allFileNames = setdiff(allFileNames,skiplist);
     [markerStructRef, ~] = Vicon.ExtractMarkers_multiSubs([filePath,'\' StaticTrialName],multiSubs);
+    markerStructRef = renameUnlabelQuanlisysMarkers(markerStructRef,qualisys_flag);
     markerDictRef = markerStruct2dict(markerStructRef);
     preprocessedFileName = allFileNames(contains(allFileNames,'preprocessed'));
     if ~isempty(preprocessedFileName)
@@ -227,17 +113,33 @@ if jp_flag
             fileName2 = fileName;
         end
 
-        if ~any(contains(lower(fileName2),'static')>0) && ~any(strcmp(filledFileName,fileName2)>0) && ~any(strcmp(preprocessedFileName,fileName2)>0) && ~any(contains(skiplist,fileName2)>0)
+        if ~any(contains(lower(fileName2),'static')>0) && ~any(strcmp(filledFileName,fileName2)>0) && ~any(strcmp(preprocessedFileName,fileName2)>0) && ~any(contains(fileName2,skiplist)>0)
         % if ~any(contains(lower(fileName2),'static')>0) && ~any(contains(filledFileName,fileName2)>0) && any(contains(preprocessedFileName,fileName2)>0) && ~any(contains(skiplist,fileName2)>0)
+            % if ~contains(fileName,'SI')
+            %     continue
+            % end
             disp('==============');
             disp(fileName) % display file name in command window
                            
             [markerStruct, markerOriginalNames] = Vicon.ExtractMarkers_multiSubs(c3dFile,multiSubs);
+            markerStruct = renameUnlabelQuanlisysMarkers(markerStruct,qualisys_flag);
             markerStructRaw = markerStruct;
             debugFlag = 0; %debugFlag enables plotting
             resetFlag = 0;
             heavyProcessNum = 2; %usually 2 is good since raw trials can be really bad in some cases and not having enough information to detect markers
             
+            
+            %% Relink Normal Markers
+
+            markerDict = markerStruct2dict(markerStruct); 
+            relinkedFlag = 1;
+            markerSetToLink = markerSet;
+            % relink marker is a direct way to relabel the marker in
+            % adjacent frames using least squared means
+            while relinkedFlag
+                [markerDict,markerSetToLink,relinkedFlag] = relinkMarkerSegmentation(markerSetToLink,markerDict,markerDictRef,clusters,5,debugFlag,workerVerbose);
+            end
+            markerStruct = markerdict2struct(markerDict);
             % markerDict = markerStruct2dict(markerStruct);   
             % TrialLength = getTrialLength(markerDict);
             % parforProperties = parcluster;
@@ -283,21 +185,17 @@ if jp_flag
                 
                 markerCellPreprocessedTemp = cell(SegLength,1);
                 % addAttachedFiles(gcp,["isKey"])
-                %% Progress Bar
-                if progressBarEnable
-                    try
-                        ppm = ParforProgressbar(SegLength,'showWorkerProgress', true,'progressBarUpdatePeriod', 1, 'title', [ ...
-                            fileName ': Process Iteration: ' num2str(processCounter) ' CropLength= ' num2str(cropLength)]);
-                    catch ME
-                        if strcmp(ME.identifier,'MATLAB:UndefinedFunction')
-                            fprintf('\nMissing ''Instrument Control Toolbox'' Addons for ProgressBar functionality\nPlease install it from Matlab Add-Ons Tab\n\n');
-                        end
-                        rethrow(ME)
-                    end
+                %% Client-side progress (workers remain quiet)
+                progressQueue = parallel.pool.DataQueue;
+                if parallelProgressEnable
+                    progressLabel = sprintf('%s | iteration %d | crop %d', ...
+                        fileName,processCounter,cropLength);
+                    ParallelProgress('start',SegLength,progressLabel);
+                    afterEach(progressQueue,@(~) ParallelProgress('increment'));
                 end
                 %% parallel processing segments
                 parfor iii = 1:SegLength
-                % for iii = 1:SegLength %for debug
+                % for iii = 22:SegLength %for debug
                     currentSegName = ['Seg_',num2str(iii)];
                     markerStruct = markerStructTemp.(currentSegName);
                     clustertemp = clusters;
@@ -306,10 +204,10 @@ if jp_flag
                     %%
                     %find GoodFrames where all markers exisiting and correctly
                     %labeled
-                    [GoodFrames,~] = FindAGoodFrame(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold);
+                    [GoodFrames,~] = FindAGoodFrame(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,workerVerbose);
                     %find GoodFramesByCluster where markers from each rigidbody is
                     %correctly labeled
-                    [GoodFramesByCluster,~,~] = FindAGoodFrameByCluster(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,GoodFrames);
+                    [GoodFramesByCluster,~,~] = FindAGoodFrameByCluster(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,GoodFrames,currentSegName,workerVerbose);
 
                     %% Remove the marker from the cluster if the marker is missing all the time
                     % this section is to avoid script error when some markers
@@ -338,14 +236,14 @@ if jp_flag
     %                 end
                     
                     % Cmarker is the unlabeled markers
-                    markerDict = CmarkerJumpSegmentation(markerDict);
-                    markerSegDict = segmentMarkers(markerDict);
+                    markerDict = CmarkerJumpSegmentation(markerDict,workerVerbose);
+                    markerSegDict = segmentMarkers(markerDict,workerVerbose);
                     % markerJumpSegmentation is to determine each continuous
                     % marker trajectories. It includes the starting and ending
                     % frame number for each trajectory segment. This can allow
                     % us to drop any jumps which can be picked later on
                     if processCounter <= heavyProcessNum || resetFlag == 1
-                        [markerDict,~] = markerJumpSegmentation(markerSet,markerSegDict,markerDict,GoodFrames,GoodFramesByCluster);
+                        [markerDict,~] = markerJumpSegmentation(markerSet,markerSegDict,markerDict,GoodFrames,GoodFramesByCluster,workerVerbose);
                     end
                     %% Relink Normal Markers
                     relinkedFlag = 1;
@@ -353,7 +251,7 @@ if jp_flag
                     % relink marker is a direct way to relabel the marker in
                     % adjacent frames using least squared means
                     while relinkedFlag
-                        [markerDict,markerSetToLink,relinkedFlag] = relinkMarkerSegmentation(markerSetToLink,markerDict,markerDictRef,clusters,10,debugFlag);
+                        [markerDict,markerSetToLink,relinkedFlag] = relinkMarkerSegmentation(markerSetToLink,markerDict,markerDictRef,clusters,10,debugFlag,workerVerbose);
                         processFoundList(iii) = processFoundList(iii) + 1;
                     end
         
@@ -367,9 +265,9 @@ if jp_flag
                     % this section is to label the markers using three
                     % different methods: rigidbody fill, nearest neighbor
                     % search, and pattern fill
-                    [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markerSet,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag);
-                    [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markerSet,jump_threshold,debugFlag);
-                    [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markerSet,debugFlag);
+                    [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markerSet,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag,workerVerbose);
+                    [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markerSet,jump_threshold,debugFlag,workerVerbose);
+                    [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markerSet,debugFlag,workerVerbose);
                     t = toc;
 
                     while (relinkedFlag1 || relinkedFlag2 || relinkedFlag3) && t < 60*timelimit
@@ -377,13 +275,13 @@ if jp_flag
                         t = toc;
                         while (relinkedFlag1 || relinkedFlag2 || relinkedFlag3) && t < 60*timelimit  
                             markersetToFill = unique([markersetToFill1(:)',markersetToFill2(:)',markersetToFill3(:)']);
-                            [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markersetToFill,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag);
-                            [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markersetToFill,jump_threshold,debugFlag);
-                            [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markersetToFill,debugFlag);
+                            [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markersetToFill,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag,workerVerbose);
+                            [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markersetToFill,jump_threshold,debugFlag,workerVerbose);
+                            [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markersetToFill,debugFlag,workerVerbose);
                         end
-                        [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markerSet,debugFlag);
-                        [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markerSet,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag);
-                        [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markerSet,jump_threshold,debugFlag);
+                        [markerDictTrimmed,markersetToFill3,relinkedFlag3] = relinkTrimmedMarkerSegmentationPattern2(markerDictTrimmed,clustertemp,markerSet,debugFlag,workerVerbose);
+                        [markerDictTrimmed,markersetToFill1,relinkedFlag1] = relinkTrimmedMarkerSegmentationRigidBody(markerDictTrimmed,markerDictRef,clustertemp,markerSet,GoodFrames,GoodFramesByCluster,jump_threshold,debugFlag,workerVerbose);
+                        [markerDictTrimmed,markersetToFill2,relinkedFlag2] = relinkTrimmedMarkerSegmentationNeighbor(markerDictTrimmed,markerDictRef,clustertemp,markerSet,jump_threshold,debugFlag,workerVerbose);
                         t = toc;
                     end
                     markerDict = markerDictTrimmed;
@@ -392,17 +290,16 @@ if jp_flag
                     %% save markerStruct for later debug
         %             save(['debugMat\',fileName,'_preprocessed.mat'],"markerStruct")
                     %%
-                    markerDict = CombineUnlabeledMarkers(markerDict);
+                    markerDict = CombineUnlabeledMarkers(markerDict,workerVerbose);
                     markerStruct = markerdict2struct(markerDict);
                     % markerStruct = QuickFix(markerStruct);
                     markerCellPreprocessedTemp{iii} = markerStruct;
-                    if progressBarEnable
-                        pause(0.1);
-                        ppm.increment();
+                    if parallelProgressEnable
+                        send(progressQueue,iii);
                     end
                 end
-                if progressBarEnable
-                    delete(ppm);
+                if parallelProgressEnable
+                    ParallelProgress('finish');
                 end
                 %% RUN SECTION HERE TO TEST combineTrialsSegments (debug purpose)
                 markerStructPreprocessedTemp = struct();
@@ -416,6 +313,11 @@ if jp_flag
                 clear markerDict markerDictTrimmed
                 markerStruct = combineTrialsSegments(markerStructPreprocessedTemp);
                 clear markerStructPreprocessedTemp
+
+                markerDict = markerStruct2dict(markerStruct);
+                markerDict = CombineUnlabeledMarkers(markerDict,workerVerbose);
+                markerStruct = markerdict2struct(markerDict);
+                    
                 %% next iteration
                 cropLength = cropLength + stepLength;
                 if any(processFoundList > 1) || processCounter == 1
@@ -431,6 +333,11 @@ if jp_flag
                     if missingFlag
                         break;
                     end
+                end
+                
+                %% Early Break
+                if processCounter > 15 
+                    break;
                 end
 
                 %% save small trials for debugging (debug purpose)
@@ -485,30 +392,31 @@ if jp_flag
             %% this seciton removes the unlabeled markers
             markerSet_names = fieldnames(markerStruct);
             markerSet_names = markerSet_names(contains(markerSet_names,'C_'));
+            emptyC = false(size(markerSet_names));
             for zz = 1:length(markerSet_names)
-                checkMarker = markerSet_names{zz};
-                if ~any(~isnan(markerStruct.(checkMarker).x))
-                    markerStruct = rmfield(markerStruct,checkMarker);
-                end
+                emptyC(zz) = all(isnan(markerStruct.(markerSet_names{zz}).x));
             end
-            markerStruct
+            if any(emptyC)
+                markerStruct = rmfield(markerStruct, markerSet_names(emptyC));
+            end
             if multiSubs
                 markerStruct = restoreOriginalMarkerNames(markerStruct,markerOriginalNames,'DefaultName',SubjectName);
             end
             markerDict = markerStruct2dict(markerStruct);
-            markerDict = CombineUnlabeledMarkers(markerDict);
+            markerDict = CombineUnlabeledMarkers(markerDict,workerVerbose);
             markerStruct = markerdict2struct(markerDict);
-            try
+            markerStruct = restoreUnlabeledCMarkers(markerStruct,qualisys_flag);
+            % try
             if multiSubs
                 Vicon.markerstoC3D_multiSubs(markerStruct, c3dFile, filledC3D);
             else
                 Vicon.markerstoC3D(markerStruct, c3dFile, filledC3D);
             end
-            catch
-                markerSetStruct = rmfield(markerStruct,markerSet_names);
-                warning(['File: ',c3dFile,' Removed all unlabeled Markers'])
-                Vicon.markerstoC3D(markerSetStruct, c3dFile, filledC3D);
-            end
+            % catch
+            %     markerSetStruct = rmfield(markerStruct,markerSet_names);
+            %     warning(['File: ',c3dFile,' Removed all unlabeled Markers'])
+            %     Vicon.markerstoC3D(markerSetStruct, c3dFile, filledC3D);
+            % end
         end
     end
     if ~isempty(checkFileList)
@@ -529,6 +437,7 @@ allFiles = dir([filePath,'/*.c3d']);
 allFileNames = {allFiles(:).name};
 allFileNames = setdiff(allFileNames,skiplist);
 [markerStructRef,~] = Vicon.ExtractMarkers_multiSubs([filePath,'\' StaticTrialName],multiSubs);
+markerStructRef = renameUnlabelQuanlisysMarkers(markerStructRef,qualisys_flag);
 preprocessedFileName = allFileNames(contains(allFileNames,'preprocessed'));
 if ~isempty(preprocessedFileName)
     preprocessedFileName = cellfun(@(x) x(1:end-17),preprocessedFileName,'UniformOutput',false);
@@ -567,8 +476,12 @@ for j = 1:length(allFileNames)
     % if ~any(contains(lower(fileName2),'static')>0) && ~any(strcmp(filledFileName,fileName2)>0) && any(strcmp(preprocessedFileName,fileName2)>0) && ~any(strcmp(preprocessedFileName,fileName)>0) && ~any(contains(skiplist,fileName2)>0)
         
         disp('==============');
+        % if ~contains(fileName,'warm_up')
+        %     continue
+        % end
         disp(fileName) % display file name in command window
         [markerStruct, markerOriginalNames] = Vicon.ExtractMarkers_multiSubs(c3dFile,multiSubs);
+        markerStruct = renameUnlabelQuanlisysMarkers(markerStruct,qualisys_flag);
 
         % [markerJumplocs,markerJumpSet] = checkForJumpingMarkers(markerSet,markerStruct,markerStructRef,jumpThreshold,jumpSpeedThreshold,gap_len,clusters);
         % if ~isempty(markerJumpSet)
@@ -601,6 +514,8 @@ for j = 1:length(allFileNames)
         end
         if exportStanding==1
             filledC3D = ([filePath,'\',fileName,'_filled.c3d']);
+
+            markerStruct = restoreUnlabeledCMarkers(markerStruct,qualisys_flag);
             disp('    Writing new C3D file...')
             if multiSubs
                 Vicon.markerstoC3D_multiSubs(markerStruct, c3dFile, filledC3D);
@@ -622,6 +537,7 @@ allFiles = dir([filePath,'/*.c3d']);
 allFileNames = {allFiles(:).name};
 allFileNames = setdiff(allFileNames,skiplist);
 [markerStructRef,~] = Vicon.ExtractMarkers_multiSubs([filePath,'\' StaticTrialName],multiSubs);
+markerStructRef = renameUnlabelQuanlisysMarkers(markerStructRef,qualisys_flag);
 preprocessedFileName = allFileNames(contains(allFileNames,'preprocessed'));
 if ~isempty(preprocessedFileName)
     preprocessedFileName = cellfun(@(x) x(1:end-17),preprocessedFileName,'UniformOutput',false);
@@ -649,6 +565,7 @@ for j = 1:length(filledFileName)
     fileName = filledFileName{j};
     c3dFile = [filePath,'\',fileName, '_filled.c3d'];
     [markerStruct, markerOriginalNames] = Vicon.ExtractMarkers_multiSubs(c3dFile,multiSubs);
+    markerStruct = renameUnlabelQuanlisysMarkers(markerStruct,qualisys_flag);
 
     NonFilledFileMarkerList = {};
     for m = 1:length(markerSet)

@@ -1,9 +1,8 @@
-function markerStruct = removeMarkerOutOfRegionOfInterest(markerStruct,upperX,lowerX,upperZ,lowerZ,verbose)
+function markerStruct = removeMarkerOutOfRegionOfInterest(markerStruct,upperX,lowerX,upperZ,lowerZ)
 %%% Treadmill - upperX:840.7, lowerX:279.4
 %%% Stairs - upperX:
-if verbose
     disp('%%%%%Remove the markers outside of interest%%%%%')
-end
+    
     markerSet = fieldnames(markerStruct);
     for mm = 1:length(markerSet)
         currentMarker = markerSet{mm};

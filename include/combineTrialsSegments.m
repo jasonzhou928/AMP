@@ -1,66 +1,129 @@
 function markerStructCombined = combineTrialsSegments(markerStruct)
 
-markerStructCombined = struct();
-
 SegNums = fieldnames(markerStruct);
-SegNums = SegNums{1};
+nSeg = numel(SegNums);
 
-markerNames = fieldnames(markerStruct.(SegNums));
+firstSeg = markerStruct.(SegNums{1});
+markerNames = fieldnames(firstSeg);
 usefulMarkers = markerNames(~contains(markerNames,'C_'));
+nUseful = numel(usefulMarkers);
 
-SegNums = fieldnames(markerStruct);
-
-for i = 1:length(usefulMarkers)
+markerStructCombined = struct();
+for i = 1:nUseful
     markerName = usefulMarkers{i};
-    for j = 1:length(SegNums)
-        SegName = SegNums{j};
-        markerStructSeg = markerStruct.(SegName);
-        if ~isfield(markerStructCombined,markerName)
-            markerStructCombined.(markerName) = markerStructSeg.(markerName);
+    parts = cell(nSeg, 1);
+    for j = 1:nSeg
+        parts{j} = markerStruct.(SegNums{j}).(markerName);
+    end
+    markerStructCombined.(markerName) = vertcat(parts{:});
+end
+
+ref = markerStructCombined.(usefulMarkers{1});
+header = ref.Header;
+nFrames = height(ref);
+
+headerMin = min(header);
+headerMax = max(header);
+headerSpan = headerMax - headerMin + 1;
+useMap = headerSpan >= 1 && headerSpan <= max(2*nFrames,1024) && ...
+    all(header == round(header));
+if useMap
+    headerIndex = zeros(headerSpan, 1);
+    headerIndex(header - headerMin + 1) = (1:nFrames)';
+end
+
+capacity = 64;
+cX = cell(capacity, 1);
+cY = cell(capacity, 1);
+cZ = cell(capacity, 1);
+cOcc = cell(capacity, 1);
+nC = 0;
+
+for si = 1:nSeg
+    seg = markerStruct.(SegNums{si});
+    segNames = fieldnames(seg);
+    CMarkers = segNames(contains(segNames,'C_'));
+    for i = 1:numel(CMarkers)
+        data = seg.(CMarkers{i});
+        valid = ~isnan(data.x);
+        if ~any(valid)
+            continue
+        end
+        segHeader = data.Header(valid);
+        valsx = data.x(valid);
+        valsy = data.y(valid);
+        valsz = data.z(valid);
+        if useMap
+            rows = headerIndex(segHeader - headerMin + 1);
         else
-            markerStructCombined.(markerName) = vertcat(markerStructCombined.(markerName),markerStructSeg.(markerName));
+            [~, rows] = ismember(segHeader, header);
+        end
+        keep = rows > 0;
+        if ~any(keep)
+            continue
+        end
+        rows = rows(keep);
+        valsx = valsx(keep);
+        valsy = valsy(keep);
+        valsz = valsz(keep);
+
+        placed = false;
+        for k = 1:nC
+            if ~any(cOcc{k}(rows))
+                cX{k}(rows) = valsx;
+                cY{k}(rows) = valsy;
+                cZ{k}(rows) = valsz;
+                cOcc{k}(rows) = true;
+                placed = true;
+                break
+            end
+        end
+        if ~placed
+            nC = nC + 1;
+            if nC > capacity
+                capacity = capacity * 2;
+                cX{capacity} = [];
+                cY{capacity} = [];
+                cZ{capacity} = [];
+                cOcc{capacity} = [];
+            end
+            x = nan(nFrames, 1);
+            y = nan(nFrames, 1);
+            z = nan(nFrames, 1);
+            occ = false(nFrames, 1);
+            x(rows) = valsx;
+            y(rows) = valsy;
+            z(rows) = valsz;
+            occ(rows) = true;
+            cX{nC} = x;
+            cY{nC} = y;
+            cZ{nC} = z;
+            cOcc{nC} = occ;
         end
     end
 end
 
-for si = 1:length(SegNums)
-    SegName = SegNums{si};
-    markerStructSeg = markerStruct.(SegName);
-    markerNames = fieldnames(markerStructSeg);
-    CMarkers = markerNames(contains(markerNames,'C_'));
-    for i = 1:length(CMarkers)
-        markerName = CMarkers{i};
-
-        markerSet = fieldnames(markerStructCombined);
-        data = markerStructSeg.(markerName);
-        segStart = markerStructSeg.(markerName).Header(1);
-        segEnd = markerStructSeg.(markerName).Header(end);
-        markerStructCombined = assignFakeID(markerStructCombined,markerSet,data,segStart,segEnd);
-    end
+if nC == 0
+    return
 end
 
+cNames = cell(nC, 1);
+cTables = cell(nC, 1);
+nextID = nUseful;
+for k = 1:nC
+    fakeID = sprintf('C_%d', nextID);
+    while any(strcmp(usefulMarkers, fakeID))
+        nextID = nextID + 1;
+        fakeID = sprintf('C_%d', nextID);
+    end
+    cNames{k} = fakeID;
+    nextID = nextID + 1;
+    cTables{k} = table(header, cX{k}, cY{k}, cZ{k}, ...
+        'VariableNames', {'Header','x','y','z'});
 end
 
+allNames = [usefulMarkers; cNames];
+allVals = [struct2cell(markerStructCombined); cTables];
+markerStructCombined = cell2struct(allVals, allNames, 1);
 
-function markerStruct = assignFakeID(markerStruct,markerSet,data,segStart,segEnd)
-    dataRange = data;
-    markerID = length(fieldnames(markerStruct));
-    fakeID = ['C_' num2str(markerID)];
-    while any(strcmp(fieldnames(markerStruct),fakeID)) || any(strcmp(markerSet,fakeID))
-        markerID = markerID + 1;
-        fakeID = ['C_' num2str(markerID)];
-    end
-    nonCMarker = fieldnames(markerStruct);
-    nonCMarker = nonCMarker{1};
-
-    fakeID_arr = markerStruct.(nonCMarker);
-    fakeID_arr.x(1:end) = NaN;
-    fakeID_arr.y(1:end) = NaN;
-    fakeID_arr.z(1:end) = NaN;
-    segStart_i = find(fakeID_arr.Header == segStart);
-    segEnd_i = find(fakeID_arr.Header == segEnd);
-    fakeID_arr.x(segStart_i:segEnd_i) = dataRange.x(:);
-    fakeID_arr.y(segStart_i:segEnd_i) = dataRange.y(:);
-    fakeID_arr.z(segStart_i:segEnd_i) = dataRange.z(:);
-    markerStruct.(fakeID) = fakeID_arr;
 end

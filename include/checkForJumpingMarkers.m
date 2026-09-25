@@ -1,4 +1,4 @@
-function [markerJumplocs,markerJumpSet] = checkForJumpingMarkers(markerSet,markerStruct,markerStructRef,jumpThreshold,jumpSpeedThreshold,gap_len,clusters,verbose)
+function [markerJumplocs,markerJumpSet] = checkForJumpingMarkers(markerSet,markerStruct,markerStructRef,jumpThreshold,jumpSpeedThreshold,gap_len,clusters)
 readable = struct();
 markerJumplocs = {};
 markerJumpSet = {};
@@ -105,9 +105,7 @@ for mm = 1:length(markerSet) % loop through marker set
     end
     alllocs = sort([locs;droplist]);
     if ~isempty(alllocs)
-        if verbose
         disp(['    MARKER JUMP: ',currentMarker,' starting at frame: ', num2str(unique(alllocs)')])
-        end
         markerJumpSet = [markerJumpSet(:)',{currentMarker}];
         markerJumplocs = [markerJumplocs(:)',{alllocs'}];
         readable.(currentMarker) = unique(alllocs);

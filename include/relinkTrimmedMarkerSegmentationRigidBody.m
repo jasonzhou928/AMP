@@ -1,6 +1,9 @@
 function [markerDict,markersetToFill,relinkedFlag] = relinkTrimmedMarkerSegmentationRigidBody(markerDict,markerDictRef,clusters,refmarkerset,GoodFrames,GoodFrames2,cluster_jump_threshold,debugFlag,verbose)
+if nargin < 9
+    verbose = true;
+end
 if verbose
-disp('%%%%%Relink Trimmed Marker Segments Using Rigid Body%%%%%')
+    disp('%%%%%Relink Trimmed Marker Segments Using Rigid Body%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -8,10 +11,6 @@ Frames = markerDict({markerStructname});
 Frames = Frames{:};
 startFrameOffset = Frames(1,1);
 totalFrames = size(Frames,1);
-
-markerSet = markerStructnames;
-CmarkerSet = markerSet(contains(markerSet,'C_'));
-markerSegDict = segmentMarkers(markerDict,verbose);
 
 direction = {'fw','bw'};
 % [markerSeglocs,markerSegSet] = segmentMarkers(markerStruct);
@@ -45,14 +44,14 @@ for mm = 1:length(refmarkerset) % loop through marker set
             GoodFrame = GoodFrame(1);
         catch
             if verbose
-            disp('   No Good Frame Found for this Marker - Using Static Trial Instead')
+                disp('   No Good Frame Found for this Marker - Using Static Trial Instead')
             end
             GoodFrameFound = 0;
         end
 
     end
     if verbose
-    disp(['Searching for: ', currentMarker])
+        disp(['Searching for: ', currentMarker])
     end
     % get segment start and end frame
     currentClusters = {};
@@ -143,33 +142,34 @@ for mm = 1:length(refmarkerset) % loop through marker set
                 pointTarget = transformationMatrix*pointToTransform; % transform marker
                 rigidbodyComputed = transpose(pointTarget(1:3));
                 
+                currentArr = markerDict({currentMarker});
+                currentArr = currentArr{:};
+                currentOccupied = ~isnan(currentArr(:,2));
                 markerSet = keys(markerDict);
                 temp_names=markerSet(contains(markerSet,'C_'));
                 for jj = 1:length(temp_names)
                     cmp_marker = temp_names{jj};
-                    cmp_data = getMarkerCoordinates(markerDict,cmp_marker,checkLoc)';           
+                    cmpArr = markerDict({cmp_marker});
+                    cmpArr = cmpArr{:};
+                    cmp_data = cmpArr(checkLoc,2:4);
                     
                     if any(isnan(cmp_data(:,1))) 
                         continue
                     end
                     
-                    cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                    currentX = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-                    
-                    hasIntersection = any(~isnan(cmpX(:,1)) & ~isnan(currentX(:,1)));
-                
-                    if hasIntersection || ~isKey(markerDict,{cmp_marker}) || strcmp(currentMarker,cmp_marker)
+                    cmpOccupied = ~isnan(cmpArr(:,2));
+                    if any(cmpOccupied & currentOccupied) || strcmp(currentMarker,cmp_marker)
                         continue
                     end
                     referenceDiff = (sum((rigidbodyComputed-cmp_data).^2)).^0.5;
                     if referenceDiff < [jump_threshold{:}]    %for RunMeCropped
                     % if referenceDiff < jump_threshold           %for RunMe
-                        cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                        cmp_data_range = find(~isnan(cmpX(:,1)));
+                        cmp_data_range = find(cmpOccupied);
                         cmp_data_range = cmp_data_range(1):cmp_data_range(end);
                         if verbose
-                        disp(['     RigidBody Found(',num2str(referenceDiff,3),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)])
+                            disp(['     RigidBody Found(',num2str(referenceDiff,3),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)])
                         end
+                        
                         markerDict = replaceCurrentMarkersWithCMarkers(markerDict,currentMarker,cmp_marker,cmp_data_range);
                         markerDict({cmp_marker}) = [];
                         
@@ -213,7 +213,7 @@ for mm = 1:length(refmarkerset) % loop through marker set
 % if debugFlag
 %     saveas(gcf,['debugFig\',currentMarker,'_RigidBody.png'])
 % end
-clf
+% clf
 end
 markersetToFill = unique(markersetToFill);
 end

@@ -630,11 +630,12 @@ for j = 1:length(allFileNames)
         disp('    Writing new C3D file...')
         markerSet_names = fieldnames(markerStruct);
         markerSet_names = markerSet_names(contains(markerSet_names,'C_'));
+        emptyC = false(size(markerSet_names));
         for zz = 1:length(markerSet_names)
-            checkMarker = markerSet_names{zz};
-            if ~any(~isnan(markerStruct.(checkMarker).x))
-                markerStruct = rmfield(markerStruct,checkMarker);
-            end
+            emptyC(zz) = all(isnan(markerStruct.(markerSet_names{zz}).x));
+        end
+        if any(emptyC)
+            markerStruct = rmfield(markerStruct, markerSet_names(emptyC));
         end
         try
             Vicon.markerstoC3D(markerStruct, c3dFile, filledC3D);

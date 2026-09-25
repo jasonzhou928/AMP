@@ -1,6 +1,9 @@
-function [GoodFrames,diffLengths,missingFlag] = FindAGoodFrameByCluster(markerDict, markerSet, markerDictRef,clusters,cluster_jump_threshold,GoodFrameRef,verbose)
+function [GoodFrames,diffLengths,missingFlag] = FindAGoodFrameByCluster(markerDict, markerSet, markerDictRef,clusters,cluster_jump_threshold,GoodFrameRef,currentSegName,verbose)
+if nargin < 8
+    verbose = true;
+end
 if verbose
-disp('%%%%%Finding Good Segment Frame from Trial%%%%%')
+    disp('%%%%%Finding Good Segment Frame from Trial%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -30,9 +33,9 @@ for tt = 1:totalFrames
     %     disp(' ')
     % end
     if verbose
-    msg = sprintf('Processed Frame %d/%d\n', loc, totalFrames);
-    fprintf([reverseStr, msg]);
-    reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        msg = sprintf('Processed Frame %d/%d\n', loc, totalFrames);
+        fprintf([reverseStr, msg]);
+        reverseStr = repmat(sprintf('\b'), 1, length(msg));
     end
     for ccs = 1:length(clusters)
         rigidDiffs = [];
@@ -173,29 +176,32 @@ if ~isConfigured(markerGoodlocs2) || length(keys(markerGoodlocs2)) < length(mark
     end
     for gg = 1:length(diffNames)
         currentMissingMarker = diffNames{gg};
+        
         if ~isKey(markerDict,{currentMissingMarker})
             markerGoodlocs2({currentMissingMarker}) = [];
             missingFlag = 1;
-%         else
-%             %% here assume the first frame is correct, which is wrong in parfor now. Thus, this section is disabled
-%             currentMissingMarkerCoordinate = getMarkerCoordinates(markerDict,currentMissingMarker,1:totalFrames);
-%             noNanLoc = find(~isnan(currentMissingMarkerCoordinate(1,:)));
-%             if isempty(noNanLoc)
-% %                 markerGoodlocs2({currentMissingMarker}) = [];
-%                 missingFlag = 1;
-%             else
-%                 noNanLoc = noNanLoc(1);
-%                 markerGoodlocs2({currentMissingMarker}) = {noNanLoc};
-%             end
+        else
+            %% here assume the first frame is correct from the first segment
+            currentMissingMarkerCoordinate = getMarkerCoordinates(markerDict,currentMissingMarker,1:totalFrames);
+            noNanLoc = find(~isnan(currentMissingMarkerCoordinate(1,:)));
+            if isempty(noNanLoc)
+%                 markerGoodlocs2({currentMissingMarker}) = [];
+                missingFlag = 1;
+            elseif strcmp(currentSegName,'Seg_1') && ~any(strcmp([modifiedClusters{:}],currentMissingMarker))
+                noNanLoc = noNanLoc(1);
+                markerGoodlocs2({currentMissingMarker}) = {noNanLoc};
+            end
         end
     end
 end
 GoodFrames = markerGoodlocs2;
+
 if verbose
-if isempty(GoodFrames)
-    disp('No Frame Found with Segment Markers')
-else
-    disp('Found Frame with Segment Markers')
+    if isempty(GoodFrames)
+        disp('No Frame Found with Segment Markers')
+    else
+        disp('Found Frame with Segment Markers')
+    end
 end
-end
+
 end

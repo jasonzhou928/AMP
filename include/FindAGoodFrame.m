@@ -1,6 +1,9 @@
 function [GoodFrames,diffLengths] = FindAGoodFrame(markerDict, markerSet, markerDictRef,clusters,cluster_jump_threshold,verbose)
+if nargin < 6
+    verbose = true;
+end
 if verbose
-disp('%%%%%Finding Good Frame from Trial%%%%%')
+    disp('%%%%%Finding Good Frame from Trial%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -15,9 +18,9 @@ reverseStr = '';
 for tt = 1:totalFrames
     loc = tt;
     if verbose
-    msg = sprintf('Processed Frame %d/%d\n', loc, totalFrames);
-    fprintf([reverseStr, msg]);
-    reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        msg = sprintf('Processed Frame %d/%d\n', loc, totalFrames);
+        fprintf([reverseStr, msg]);
+        reverseStr = repmat(sprintf('\b'), 1, length(msg));
     end
     rigidDiffs = [];
     for mm = 1:length(markerSet) % loop through marker set
@@ -121,11 +124,13 @@ for tt = 1:totalFrames
         end
     end
 end
+
 if verbose
-if isempty(GoodFrames)
-    disp('No Frame Found with Full Markers')
-else
-    disp('Found Frame with Full Markers')
+    if isempty(GoodFrames)
+        disp('No Frame Found with Full Markers')
+    else
+        disp('Found Frame with Full Markers')
+    end
 end
-end
+
 end

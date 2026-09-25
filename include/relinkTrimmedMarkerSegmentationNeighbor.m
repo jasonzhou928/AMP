@@ -1,7 +1,10 @@
 
 function [markerDict,markersetToFill,relinkedFlag] = relinkTrimmedMarkerSegmentationNeighbor(markerDict,markerDictRef,clusters,refmarkerset,cluster_jump_threshold,debugFlag,verbose)
+if nargin < 7
+    verbose = true;
+end
 if verbose
-disp('%%%%%Relink Trimmed Marker Segments Using Neighbor Frame%%%%%')
+    disp('%%%%%Relink Trimmed Marker Segments Using Neighbor Frame%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -20,7 +23,7 @@ gaps = {1,2,3,4,5,6,7,8,9,10};
 segRangeMax = max(cell2mat(gaps));
 reverseStr = '';
 markersetToFill = {};
-msg = '';
+
 
 for mm = 1:length(refmarkerset) % loop through marker set
     currentMarker = refmarkerset{mm};
@@ -28,36 +31,35 @@ for mm = 1:length(refmarkerset) % loop through marker set
         continue
     end
     if verbose
-    disp(['Searching for: ', currentMarker])
+        disp(['Searching for: ', currentMarker])
+    end
     
-    if strcmp(currentMarker,'RMT5') %for debug
-        disp('')
-    end
-    end
     markerSeg = markerSegDict({currentMarker});
     markerSeg = markerSeg{:};
     reverseStr = '';
     for ii = 1:length(markerSeg)
         segLoc = markerSeg(ii);
         foundFlag = 1;
-        if verbose
         msg = sprintf('Segments To Go: %d\n', length(markerSeg) - ii);
-        fprintf([reverseStr, msg]);
-        reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        if verbose
+            fprintf([reverseStr, msg]);
+            reverseStr = repmat(sprintf('\b'), 1, length(msg));
         end
         while foundFlag
             foundFlag = 0;
-            data = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
+            currentArr = markerDict({currentMarker});
+            currentArr = currentArr{:};
+            data = currentArr(:,2:4);
+            currentOccupied = ~isnan(currentArr(:,2));
             markerSet = keys(markerDict);
             temp_names=markerSet(contains(markerSet,'C_'));
             for jj = 1:length(temp_names)
                 currentFound = 0;
                 cmp_marker = temp_names{jj};
-                cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                currentX = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-                
-                hasIntersection = any(~isnan(cmpX(:,1)) & ~isnan(currentX(:,1)));
-                if hasIntersection || ~isKey(markerDict,{cmp_marker}) || strcmp(currentMarker,cmp_marker)
+                cmpArr = markerDict({cmp_marker});
+                cmpArr = cmpArr{:};
+                cmpOccupied = ~isnan(cmpArr(:,2));
+                if any(cmpOccupied & currentOccupied) || strcmp(currentMarker,cmp_marker)
                     continue
                 end
 
@@ -83,7 +85,7 @@ for mm = 1:length(refmarkerset) % loop through marker set
                     end
                     CmarkerSeg = markerSegDict({cmp_marker});
                     CmarkerSeg = CmarkerSeg{:};
-                    cmp_data = getMarkerCoordinates(markerDict,cmp_marker,checkLoc)';           
+                    cmp_data = cmpArr(checkLoc,2:4);
                     if ~any(isnan(cmp_data)) && any(ismember(checkLoc,CmarkerSeg))
                         % currentMarkerCoordinate = data(segLoc,:);
                         % if any(segRange<1) || any(segRange>totalFrames) || any(isnan(data(segRange,1))) || length(segRange)<2
@@ -120,23 +122,23 @@ for mm = 1:length(refmarkerset) % loop through marker set
                         if mean(referenceDiff) <= 25
 %                             check = all(abs(referenceDiffAxis-referenceVelAxis*gap) < 10);
 %                             check = abs(referenceDiffAxis-referenceVelAxis*gap) < 10;
-                            cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                            cmp_data_range = find(~isnan(cmpX(:,1)));
+                            cmp_data_range = find(cmpOccupied);
                             starting = cmp_data_range(1);
                             ending = cmp_data_range(end);
                             cmp_data_range = cmp_data_range(1):cmp_data_range(end);
                             % msg = ['     NeighborFrame Found(',num2str(thresholdCheck,3),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)];
                             msg = ['     NeighborFrame Found(',num2str(mean(referenceDiff)),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)];
                             if verbose
-                            disp(msg)
+                                disp(msg)
                             end
+                            
                             markerDict = replaceCurrentMarkersWithCMarkers(markerDict,currentMarker,cmp_marker,cmp_data_range);
 
                             jumped = 0;
                             if jumped
                                 markerStruct = markerStructBefore;
                                 if verbose
-                                disp('     Relink Incorrectly, Revert Back')
+                                    disp('     Relink Incorrectly, Revert Back')
                                 end
                             else
                                 markerDict({cmp_marker}) = [];
@@ -189,13 +191,13 @@ for mm = 1:length(refmarkerset) % loop through marker set
                 foundFlag = 0;
             end
         end
-        if ~contains(msg,'Segment')
+        if verbose && ~contains(msg,'Segment')
             msg = newline;
-            if verbose
             fprintf(msg);
-            end
         end
-        reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        if verbose
+            reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        end
     end
 
 % if debugFlag

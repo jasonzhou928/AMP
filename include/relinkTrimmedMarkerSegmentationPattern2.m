@@ -1,6 +1,9 @@
 function [markerDict,markersetToFill,relinkedFlag] = relinkTrimmedMarkerSegmentationPattern2(markerDict,clusters,refmarkerset,debugFlag,verbose)
+if nargin < 5
+    verbose = true;
+end
 if verbose
-disp('%%%%%Relink Trimmed Marker Segments Using PatternFill%%%%%')
+    disp('%%%%%Relink Trimmed Marker Segments Using PatternFill%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -32,8 +35,9 @@ for mm = 1:length(refmarkerset) % loop through marker set
         continue
     end
     if verbose
-    disp(['Searching for: ', currentMarker])
+        disp(['Searching for: ', currentMarker])
     end
+    
     markerSeg = markerSegDict({currentMarker});
     markerSeg = markerSeg{:};
 
@@ -53,7 +57,10 @@ for mm = 1:length(refmarkerset) % loop through marker set
         foundFlag = 1;
         while foundFlag
             foundFlag = 0;
-            data = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
+            currentArr = markerDict({currentMarker});
+            currentArr = currentArr{:};
+            data = currentArr(:,2:4);
+            currentOccupied = ~isnan(currentArr(:,2));
             if mod(ii,2)
                 checkLoc = segLoc;
                 ending = checkLoc-1;
@@ -86,7 +93,9 @@ for mm = 1:length(refmarkerset) % loop through marker set
                 PatternMarkerFilled = data;
                 for cci = 1:length(currentCluster) % loop through cluster markers
                     currentDonor = currentCluster{cci}; % look at specific donor marker
-                    currentCoordinate = getMarkerCoordinates(markerDict,currentDonor,1:totalFrames)';
+                    donorArr = markerDict({currentDonor});
+                    donorArr = donorArr{:};
+                    currentCoordinate = donorArr(:,2:4);
                     if ~all(isnan(currentCoordinate(:,1))) && ~all(isnan(currentCoordinate(starting:ending,1)))
                         patternDiff = currentCoordinate - currentCoordinate(checkLoc,:);
                         PatternMarkerFilled(starting:ending,:) = data(checkLoc,:) + patternDiff(starting:ending,:);
@@ -97,32 +106,30 @@ for mm = 1:length(refmarkerset) % loop through marker set
                         for jj = 1:length(temp_names)
                             currentFound = 0;
                             cmp_marker = temp_names{jj};
-                            cmp_data = getMarkerCoordinates(markerDict,cmp_marker,starting:ending)';
+                            cmpArr = markerDict({cmp_marker});
+                            cmpArr = cmpArr{:};
+                            cmp_data = cmpArr(starting:ending,2:4);
                             if any(~isnan(cmp_data(:,1))) 
-                                cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';  
-                                noNaNIdxs =~isnan(cmpX(:,1));
+                                cmpOccupied = ~isnan(cmpArr(:,2));
+                                noNaNIdxs = cmpOccupied;
                                 currentMarkerCoordinate = PatternMarkerFilled(noNaNIdxs,:);
                                 if any(isnan(currentMarkerCoordinate))
                                     continue
                                 end
-                                cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                                currentX = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-                                
-                                hasIntersection = any(~isnan(cmpX(:,1)) & ~isnan(currentX(:,1)));
-                                if hasIntersection || ~isKey(markerDict,{cmp_marker}) || strcmp(currentMarker,cmp_marker)
+                                if any(cmpOccupied & currentOccupied) || strcmp(currentMarker,cmp_marker)
                                     continue
                                 end
 
-                                cmpMarkerCoordinate = getMarkerCoordinates(markerDict,cmp_marker,noNaNIdxs)';
+                                cmpMarkerCoordinate = cmpArr(noNaNIdxs,2:4);
                                 referenceDiff = (sum((currentMarkerCoordinate-cmpMarkerCoordinate).^2,2)).^0.5;
 
-                                if (length(referenceDiff) == 1 && referenceDiff < 10 && ending - starting <= 150) || all(referenceDiff <= 15)
-                                    cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                                    cmp_data_range = find(~isnan(cmpX(:,1)));
+                                if (length(referenceDiff) == 1 && referenceDiff < 5 && ending - starting <= 150) || all(referenceDiff <= 10)
+                                    cmp_data_range = find(cmpOccupied);
                                     cmp_data_range = cmp_data_range(1):cmp_data_range(end);
                                     if verbose
-                                    disp(['     PatternFill Found(',num2str(max(referenceDiff),3),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)])
+                                        disp(['     PatternFill Found(',num2str(max(referenceDiff),3),') : ', currentMarker,' with ',cmp_marker, ' at frames: ',num2str(cmp_data_range(1)+startFrameOffset-1),' - ',num2str(cmp_data_range(end)+startFrameOffset-1)])
                                     end
+                                    
                                     markerDict = replaceCurrentMarkersWithCMarkers(markerDict,currentMarker,cmp_marker,cmp_data_range);
                                     markerDict({cmp_marker}) = [];
                                     markersetToFill = [markersetToFill(:)',currentMarker];
@@ -173,6 +180,6 @@ for mm = 1:length(refmarkerset) % loop through marker set
 % if debugFlag
 %     saveas(gcf,['debugFig\',currentMarker,'_PatternFill.png'])
 % end
-clf
+% clf
 end
 end

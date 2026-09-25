@@ -1,6 +1,9 @@
 function [markerDict,markerSetToLink,relinkedFlag] = relinkMarkerSegmentation(markerSet,markerDict,markerDictRef,clusters,jp_threshold,debugFlag,verbose)
+if nargin < 7
+    verbose = true;
+end
 if verbose
-disp('%%%%%Relink Marker Segments%%%%%')
+    disp('%%%%%Relink Marker Segments%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
@@ -19,7 +22,7 @@ for mm = 1:length(markerSet) % loop through marker set
     currentMarker = markerSet{mm};
     % get segment start and end frame
     if verbose
-    disp(['  Current Marker: ',currentMarker])
+        disp(['  Current Marker: ',currentMarker])
     end
     if ~isKey(markerDict,{currentMarker})
         continue
@@ -33,6 +36,9 @@ for mm = 1:length(markerSet) % loop through marker set
 %         markerSeg = markerSegDict({currentMarker});
 %         markerSeg = markerSeg{:};
         markerSeg = markerSegDict{:};
+        currentArr = markerDict({currentMarker});
+        currentArr = currentArr{:};
+        currentOccupied = ~isnan(currentArr(:,2));
 
         for ii = 1:length(markerSeg)
             if mod(ii,2)
@@ -51,25 +57,20 @@ for mm = 1:length(markerSet) % loop through marker set
             CmarkerSet = temp_names;
             for jj = 1:length(CmarkerSet)
                 cmp_marker = CmarkerSet{jj};
-                cmp_data = getIfMarkerCoordinateNaN(markerDict,cmp_marker,checkLoc);
-                cmp_data_range = getIfMarkerCoordinateNaN(markerDict,cmp_marker,currentLoc);
+                cmpArr = markerDict({cmp_marker});
+                cmpArr = cmpArr{:};
+                cmp_data = any(isnan(cmpArr(checkLoc,:)));
+                cmp_data_range = any(isnan(cmpArr(currentLoc,:)));
                 if cmp_data || ~cmp_data_range
                     continue
                 end
-%                 cmp_noNaNIdxs = find(~isnan(markerStruct.(cmp_marker).x));
-%                 current_noNaNidxs = find(~isnan(markerStruct.(currentMarker).x));
-%                 [commonVals,~] = intersect(cmp_noNaNIdxs,current_noNaNidxs);
-                cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                currentX = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-                
-                hasIntersection = any(~isnan(cmpX(:,1)) & ~isnan(currentX(:,1)));
-                if hasIntersection || ~isKey(markerDict,{cmp_marker}) || strcmp(currentMarker,cmp_marker)
+                cmpOccupied = ~isnan(cmpArr(:,2));
+                if any(cmpOccupied & currentOccupied) || strcmp(currentMarker,cmp_marker)
                     continue
                 end
                 
-                data = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-                dataRange = data(currentLoc,:);
-                dataRange(2,:) = getMarkerCoordinates(markerDict,cmp_marker,checkLoc)';
+                dataRange = currentArr(currentLoc,2:4);
+                dataRange(2,:) = cmpArr(checkLoc,2:4);
                 markerSpeedIncrement = sum(diff(dataRange).^2,2).^0.5;
                 if markerSpeedIncrement < jp_threshold
                     found_markers = [found_markers(:)',{cmp_marker}];
@@ -82,18 +83,17 @@ for mm = 1:length(markerSet) % loop through marker set
                     [~,found_idx] = min(found_diffs);
                     cmp_marker = found_markers{found_idx};
                     if verbose
-                    disp('   Found Multiple Markers')
+                        disp('   Found Multiple Markers')
                     end
                 else
                     cmp_marker = found_markers{:};
                 end
-                cmpX = getMarkerCoordinates(markerDict,cmp_marker,1:totalFrames)';
-                cmp_data_range = find(~isnan(cmpX(:,1)));
+                cmp_data_range = find(cmpOccupied);
                 starting = cmp_data_range(1);
                 ending = cmp_data_range(end);
                 loc_found = cmp_data_range + startFrameOffset - 1;
                 if verbose
-                disp(['     Normal Relink: ',currentMarker,' with ',cmp_marker,' at frames ',num2str(loc_found(1)),' - ',num2str(loc_found(end))])
+                    disp(['     Normal Relink: ',currentMarker,' with ',cmp_marker,' at frames ',num2str(loc_found(1)),' - ',num2str(loc_found(end))])
                 end
                 markerDict = replaceCurrentMarkersWithCMarkers(markerDict,currentMarker,cmp_marker,cmp_data_range);
 
@@ -125,7 +125,7 @@ for mm = 1:length(markerSet) % loop through marker set
                 if jumped
                     markerStruct = markerStructBefore;
                     if verbose
-                    disp('     Normal Relink Incorrectly, Revert Back')
+                        disp('     Normal Relink Incorrectly, Revert Back')
                     end
                 else
                     markerDict({cmp_marker}) = [];
@@ -136,7 +136,7 @@ for mm = 1:length(markerSet) % loop through marker set
             end
         end
     end
-    clf
+    % clf
 end
 markerSetToLink = unique(markerSetToLink);
 end

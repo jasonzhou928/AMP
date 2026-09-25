@@ -92,7 +92,7 @@ function [regParams,Bfit,ErrorStats]=absor(A,B,varargin)
 for ii=1:2:length(varargin)
     param=varargin{ii};
     val=varargin{ii+1};
-    if strcmpi(param,'doScale'), 
+    if strcmpi(param,'doScale') 
         options.doScale=val;
     elseif strcmpi(param,'weights')
         options.weights=val;

@@ -1,34 +1,32 @@
-function [markerDict,markerSegFlag] = markerJumpSegmentation(markerSet,markerSegDict,markerDict,GoodFrames,GoodFrames2,verbose)
+function [markerDict,markerSegFlag] = markerJumpSegmentation(WBAM_Markerset,markerSegDict,markerDict,GoodFrames,GoodFrames2,verbose)
+if nargin < 6
+    verbose = true;
+end
 if verbose
-disp('%%%%%Segmenting Markers -- Generating Pseudo Markers%%%%%')
+    disp('%%%%%Segmenting Markers -- Generating Pseudo Markers%%%%%')
 end
 markerStructnames = keys(markerDict);
 markerStructname = markerStructnames{1};
 Frames = markerDict({markerStructname});
 Frames = Frames{:};
-startFrameOffset = Frames(1,1);
 totalFrames = size(Frames,1);
 
-markerSet = markerStructnames;
-markerSet = markerSet(~contains(markerSet,'C_'));
-
-markerJumplocs = {};
-markerJumpSet = {};
+markerSet = markerStructnames(~contains(markerStructnames,'C_'));
 markerSegFlag = 0;
 
 reverseStr = '';
+nextMarkerID = length(markerStructnames);
+usedNames = markerStructnames;
 
 for mm = 1:length(markerSet) % loop through marker set
     currentMarker = markerSet{mm};
+    
     if verbose
-    msg = sprintf('Processed Markers %d/%d\nGenerated Markers: %d \n', mm, length(markerSet),length(markerStructnames));
-    fprintf([reverseStr, msg]);
-    reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        msg = sprintf('Processed Markers %d/%d\nGenerated Markers: %d \n', mm, length(markerSet),length(markerStructnames));
+        fprintf([reverseStr, msg]);
+        reverseStr = repmat(sprintf('\b'), 1, length(msg));
     end
-    if contains(currentMarker,'C_')
-        continue
-    end
-
+    
     % if contains(currentMarker,'RFIN2')
     %     disp('here')
     % end
@@ -36,6 +34,7 @@ for mm = 1:length(markerSet) % loop through marker set
     markerSegs = markerSegs{:};
     
     data = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
+    fragmentRanges = zeros(0,2);
     for bb = 1:length(markerSegs)/2
         %%% find marker jumps within each segment using nearest neighbors
         segStart = markerSegs(bb*2-1);
@@ -51,15 +50,15 @@ for mm = 1:length(markerSet) % loop through marker set
                 GoodFrameLocs = GoodFrames2({currentMarker});
                 GoodFrameLocs = GoodFrameLocs{:};
             catch 
-                markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,segStart,segEnd);
+                fragmentRanges(end+1,:) = [segStart,segEnd];
                 markerSegFlag = 1;
                 continue
             end
             
-            if all(~ismember(markerSet,currentMarker)) || ~any(ismember(GoodFrames,segStart:segEnd)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,segStart:segEnd))))
+            if all(~ismember(WBAM_Markerset,currentMarker)) || ~any(ismember(GoodFrames,segStart:segEnd)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,segStart:segEnd))))
 %                 markerStruct = assignCurrentMarker(currentMarker,markerStruct,data,segStart,segEnd);
 %             else
-                markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,segStart,segEnd);
+                fragmentRanges(end+1,:) = [segStart,segEnd];
                 markerSegFlag = 1;
             end
         elseif any(abs(diff(markerSpeedIncrement)) > 10) && any(markerSpeedIncrement > 20) && length(markerSpeedIncrement) > 1
@@ -87,12 +86,12 @@ for mm = 1:length(markerSet) % loop through marker set
                     GoodFrameLocs = GoodFrames2({currentMarker});
                     GoodFrameLocs = GoodFrameLocs{:};
                 catch 
-                    markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,starting,ending);
+                    fragmentRanges(end+1,:) = [starting,ending];
                     markerSegFlag = 1;
                     continue
                 end
-                if all(~ismember(markerSet,currentMarker)) || ~any(ismember(GoodFrames,starting:ending)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,starting:ending))))
-                    markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,starting,ending);
+                if all(~ismember(WBAM_Markerset,currentMarker)) || ~any(ismember(GoodFrames,starting:ending)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,starting:ending))))
+                    fragmentRanges(end+1,:) = [starting,ending];
                     markerSegFlag = 1;
                 end
             end
@@ -104,12 +103,13 @@ for mm = 1:length(markerSet) % loop through marker set
                     GoodFrameLocs = GoodFrames2({currentMarker});
                     GoodFrameLocs = GoodFrameLocs{:};
                 catch 
-                    markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,jumpSeg,jumpSeg);
+                    fragmentRanges(end+1,:) = [jumpSeg,jumpSeg];
                     markerSegFlag = 1;
                     continue
                 end
-                if all(~ismember(markerSet,currentMarker)) || ~any(ismember(GoodFrames,jumpSeg:jumpSeg)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,jumpSeg:jumpSeg))))
-                    markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,jumpSeg,jumpSeg);
+                if all(~ismember(WBAM_Markerset,currentMarker)) || ~any(ismember(GoodFrames,jumpSeg:jumpSeg)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,jumpSeg:jumpSeg))))
+                    fragmentRanges(end+1,:) = [jumpSeg,jumpSeg];
+                    markerSegFlag = 1;
                 end
             end
         else
@@ -117,50 +117,60 @@ for mm = 1:length(markerSet) % loop through marker set
                 GoodFrameLocs = GoodFrames2({currentMarker});
                 GoodFrameLocs = GoodFrameLocs{:};
             catch 
-                markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,segStart,segEnd);
+                fragmentRanges(end+1,:) = [segStart,segEnd];
                 markerSegFlag = 1;
                 continue
             end
-            if all(~ismember(markerSet,currentMarker)) || ~any(ismember(GoodFrames,segStart:segEnd)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,segStart:segEnd))))
-                markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,segStart,segEnd);
+            if all(~ismember(WBAM_Markerset,currentMarker)) || ~any(ismember(GoodFrames,segStart:segEnd)) && (~isKey(GoodFrames2,{currentMarker}) || (isKey(GoodFrames2,{currentMarker}) && ~any(ismember(GoodFrameLocs,segStart:segEnd))))
+                fragmentRanges(end+1,:) = [segStart,segEnd];
                 markerSegFlag = 1;
             end
         end
     end
-    currentMarkerCoord = getMarkerCoordinates(markerDict,currentMarker,1:totalFrames)';
-    if ~any(~isnan(currentMarkerCoord(:,1))) && ~ismember(currentMarker,markerSet)
-        markerDict({currentMarker}) = [];
+    
+    nFragments = size(fragmentRanges,1);
+    if nFragments > 0
+        source = markerDict({currentMarker});
+        source = source{:};
+        emptyMarker = source;
+        emptyMarker(:,2:4) = NaN;
+        fragmentNames = cell(nFragments,1);
+        fragmentValues = cell(nFragments,1);
+        removeRows = false(totalFrames,1);
+        for ii = 1:nFragments
+            while true
+                fakeID = ['C_' num2str(nextMarkerID)];
+                nextMarkerID = nextMarkerID + 1;
+                if ~any(strcmp(usedNames,fakeID))
+                    break
+                end
+            end
+            usedNames{end+1} = fakeID;
+            fragmentNames{ii} = fakeID;
+            starting = fragmentRanges(ii,1);
+            ending = fragmentRanges(ii,2);
+            fragment = emptyMarker;
+            fragment(starting:ending,2:4) = data(starting:ending,:);
+            fragmentValues{ii} = fragment;
+            removeRows(starting:ending) = true;
+        end
+        markerDict(fragmentNames) = fragmentValues;
+        source(removeRows,2:4) = NaN;
+        if ~any(~isnan(source(:,2))) && ~ismember(currentMarker,WBAM_Markerset)
+            markerDict({currentMarker}) = [];
+        else
+            markerDict({currentMarker}) = {source};
+        end
+    elseif ~ismember(currentMarker,WBAM_Markerset)
+        source = markerDict({currentMarker});
+        source = source{:};
+        if ~any(~isnan(source(:,2)))
+            markerDict({currentMarker}) = [];
+        end
     end
 end
 totalMarkers = length(keys(markerDict));
 if verbose
-disp(['  Generated in total of ',num2str(totalMarkers),' Markers']);
+    disp(['  Generated in total of ',num2str(totalMarkers),' Markers']);
 end
-end
-
-function markerDict = assignFakeID(currentMarker,markerDict,markerSet,data,segStart,segEnd)
-    dataRange = data(segStart:segEnd,:);
-    markerID = length(keys(markerDict));
-    fakeID = ['C_' num2str(markerID)];
-    while any(strcmp(keys(markerDict),fakeID)) || any(strcmp(markerSet,fakeID))
-        markerID = markerID + 1;
-        fakeID = ['C_' num2str(markerID)];
-    end
-
-    fakeID_arr = markerDict({currentMarker});
-    fakeID_arr = fakeID_arr{:};
-    fakeID_arr(1:end,2) = NaN;
-    fakeID_arr(1:end,3) = NaN;
-    fakeID_arr(1:end,4) = NaN;
-    fakeID_arr(segStart:segEnd,2) = dataRange(:,1);
-    fakeID_arr(segStart:segEnd,3) = dataRange(:,2);
-    fakeID_arr(segStart:segEnd,4) = dataRange(:,3);
-    markerDict({fakeID}) = {fakeID_arr};
-
-    current_arr = markerDict({currentMarker});
-    current_arr = current_arr{:};
-    current_arr(segStart:segEnd,2) = NaN;
-    current_arr(segStart:segEnd,3) = NaN;
-    current_arr(segStart:segEnd,4) = NaN;
-    markerDict({currentMarker}) = {current_arr};
 end
