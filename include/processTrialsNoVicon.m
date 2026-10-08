@@ -115,7 +115,7 @@ for i = 1:length(trialList)
                     [GoodFrames,~] = FindAGoodFrame(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,verbose);
                     %find GoodFramesByCluster where markers from each rigidbody is
                     %correctly labeled
-                    [GoodFramesByCluster,~,~] = FindAGoodFrameByCluster(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,GoodFrames,verbose);
+                    [GoodFramesByCluster,~,~] = FindAGoodFrameByCluster(markerDict,markerSet,markerDictRef,clustertemp,jump_threshold,GoodFrames,currentSegName,verbose);
 
                     %% Remove the marker from the cluster if the marker is missing all the time
                     % this section is to avoid script error when some markers

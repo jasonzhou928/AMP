@@ -32,6 +32,10 @@ function Main(folderList, staticFilePath, skipList, keepList, paramStruct, useVi
     paramStruct.zbound = [-10000,10000];
     paramStruct.multiSubs = false;
     % paramStruct.heavyProcessNum = 2; % number of times heavy relabelling processes will be done
+
+    %% (OPTIONAL) If not using Vicon, input your clusters, cluster jump threshholds, and subect name(s) manually
+    custom_jump_thresholds = {{40},{40},...
+    };
     
     
     %% Check that folders are valid
@@ -62,7 +66,7 @@ function Main(folderList, staticFilePath, skipList, keepList, paramStruct, useVi
         checkMakeDir([folderPath '\Failed\Diagnostics'])
         moveMarkersetFiles(folderPath)
         if useVicon
-            [clusters, clusters_jump_threshold, markerStructRef, subjects, multisubs] = getMarkerSet(folderPath, viconPath,custom_jump_thresholds,paramStruct.defaultJumpThreshold, staticFilePath); %get markerstruct and reference frame from static trial
+            [clusters, clusters_jump_threshold, markerStructRef, subjects, multisubs] = getMarkerSet(folderPath, viconPath, custom_jump_thresholds,paramStruct.defaultJumpThreshold, staticFilePath); %get markerstruct and reference frame from static trial
             paramStruct.multiSubs = multisubs;
             trialList = getTrials(folderPath,skipList, keepList, staticFilePath, useVicon); % get trial list
             % trialList = folderPath;
