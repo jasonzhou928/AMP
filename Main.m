@@ -71,17 +71,18 @@ function Main(folderList, staticFilePath, skipList, keepList, paramStruct, useVi
             end
             processTrials(clusters,clusters_jump_threshold, markerStructRef, folderPath, trialList, viconPath, paramStruct, subjects, useVicon, app)
         else
+            if length(subjects) > 1
+                paramStruct.multiSubs = true;
+            end
             markerStructRef = getMarkerStructRef(folderPath,paramStruct.multiSubs, staticFilePath);
             trialList = getTrials(folderPath,skipList, keepList, staticFilePath, useVicon); % get trial list
             
+
             % trialList = folderPath;
             if autoParams
                 clusters_jump_threshold = getAutoParamsNoVicon(clusters, markerStructRef, folderPath, trialList, paramStruct, subjects, useVicon);
                 % clusters_jump_threshold = cell(1, 16); 
                 % clusters_jump_threshold(:) = {{100}}; 
-            end
-            if length(subjects) > 1
-                paramStruct.multiSubs = true;
             end
             processTrialsNoVicon(clusters,clusters_jump_threshold, markerStructRef, folderPath, trialList, paramStruct, subjects, useVicon, app)
             

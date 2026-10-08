@@ -129,7 +129,7 @@ for tt = 1:totalFrames
 
             if cc == length(currentCluster)
                 % diffMax = vertcat(diffMax,[loc,max(rigidDiffs)]);
-                if ~max(rigidDiffs) || sum(rigidDiffs == 0) >= 3
+                if all(~rigidDiffs) || sum(rigidDiffs == 0) >= 3
                     for mm = 1:length(currentCluster)
                         currentMarker = currentCluster{mm};
                         rigidIdx = strcmp(currentMarker,rigidDiffsName);
