@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vicon-processing-python"
+version = "0.1.0"
+description = "Core marker-model and C3D utilities translated from ViconAutoProcessing"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "ezc3d>=1.5",
+    "PyYAML>=6.0",
+    "scipy>=1.10",
+]
+
+[project.scripts]
+vicon-process = "ViconProcessingPython.cli:main"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.setuptools.packages.find]
+include = ["ViconProcessingPython*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

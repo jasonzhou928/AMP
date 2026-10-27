@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: vicon-processing-python
+Version: 0.1.0
+Summary: Core marker-model and C3D utilities translated from ViconAutoProcessing
+Requires-Python: >=3.10
+Requires-Dist: numpy>=1.24
+Requires-Dist: ezc3d>=1.5
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: scipy>=1.10
+Provides-Extra: test
+Requires-Dist: pytest>=7; extra == "test"

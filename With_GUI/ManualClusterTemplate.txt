@@ -1,0 +1,38 @@
+subjects = {
+'DOE_TI'
+};
+
+custom_jump_thresholds = {
+     {70};
+     {70};
+     {40};
+     {40};
+     {35};
+     {40};
+     {40};
+     {35};  
+     {40};
+     {40};
+     {35}; 
+     {40};
+     {40};
+     {35};
+ };
+
+custom_clusters = {
+
+     {'RASI','LASI','RPSI','LPSI','IMU_PELVIS','RILCRE','LILCRE'};
+     {'T10_OFFSET','IMU_BACK','STRN','RBACK','LBACK','JN','C7','RSHO','LSHO'};
+     {'RSHO','RUPA','RLELB','RMELB'};
+     {'RLELB','RMELB','RFRM','RULN','RRAD'};
+     {'RULN','RRAD','RFIN5','RFIN2'};
+     {'LSHO','LUPA','LLELB','LMELB'};
+     {'LLELB','LMELB','LFRM','LULN','LRAD'};
+     {'LULN','LRAD','LFIN5','LFIN2'};    
+     {'RASI','IMU_THIGHR','RTHI_BOT','RLKNE','RMKNE'};
+     {'RTIB_TOP','IMU_SHANKR','RTIB_BOT','RLANK','RMANK'};
+     {'XS_R','RMT5','RMT2','RHEE'};    
+     {'LASI','IMU_THIGHL','LTHI_BOT','LLKNE','LMKNE'};
+     {'LTIB_TOP','IMU_SHANKL','LTIB_BOT','LLANK','LMANK'};
+     {'XS_L','LMT5','LMT2','LHEE'};
+ };

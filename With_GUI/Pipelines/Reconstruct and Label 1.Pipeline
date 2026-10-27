@@ -1,0 +1,100 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no" ?>
+<Pipeline>
+
+  <Entry DisplayName="Reconstruct" Enabled="1" OperationId="261" OperationName="ComputeRecons">
+    <ParamList name="">
+      <Param macro="SELECTED_START_FRAME" name="START_FRAME"/>
+      <Param macro="SELECTED_END_FRAME" name="LAST_FRAME"/>
+      <Param name="CircleFitter.ThreadCount" value="0"/>
+      <Param name="CircleFitter.Enabled" value="true"/>
+      <Param name="CircleFitterType" value="FastSplit"/>
+      <Param name="FastFitCircularityThreshold" value="0.25"/>
+      <Param name="CentroidSystem.RefitAlreadyFittedBlobs" value="false"/>
+      <Param name="PreferCameraSpecificSettings" value="true"/>
+      <Param name="MinimumFastSplitWholeBlobRadius" value="1.5"/>
+      <Param name="FastSplitPixelBudget" value="1000000"/>
+      <Param name="CircularityTweak" value="0"/>
+      <Param name="OverrideCircularityThresholdSplit" value="0.44"/>
+      <Param name="UseNonGreedyBlobSplitting" value="false"/>
+      <Param name="GreedyScoreThreshold" value="0.65000000000000002"/>
+      <Param name="CentroidSystem.AllowSinglePixelCentroids" value="false"/>
+      <Param name="VideoCentroids.PreferCameraSpecificSettings" value="true"/>
+      <Param name="VideoCentroids.FastFitCircularityThreshold" value="0.29999999999999999"/>
+      <Param name="Reconstructor.Enabled" value="true"/>
+      <Param name="Reconstructor.ThreadCount" value="2"/>
+      <Param name="Reconstructor.3DPredictions" value="false"/>
+      <Param name="PredictionError" value="20"/>
+      <Param name="StartupError" value="50"/>
+      <Param name="EnvironmentalDriftTolerance" value="1.5"/>
+      <Param name="MinCentroidRadius" value="0"/>
+      <Param name="MaxCentroidRadius" value="50"/>
+      <Param name="MinReconRadius" value="0"/>
+      <Param name="MaxReconRadius" value="600"/>
+      <Param name="MinCams" value="3"/>
+      <Param name="MinCamsWithPrediction" value="2"/>
+      <Param name="PredictionMatchScoreFactor" value="2"/>
+      <Param name="MinSeparation" value="20"/>
+      <Param name="MinReconX" value="-100000"/>
+      <Param name="MinReconY" value="-100000"/>
+      <Param name="MinReconZ" value="-100000"/>
+      <Param name="MaxReconX" value="100000"/>
+      <Param name="MaxReconY" value="100000"/>
+      <Param name="MaxReconZ" value="100000"/>
+      <Param name="MatcherLowerMatchLimit" value="0"/>
+      <Param name="MatcherUpperMatchLimit" value="0"/>
+      <Param name="MatcherAlwaysSort" value="false"/>
+      <Param name="Reconstructor.MaxTrajLengthToDelete" value="5"/>
+      <Param name="FitReconVolToTarget" value="false"/>
+      <Param name="Local.GraphParamsFilename"/>
+      <Param name="Local.PostGlobalItemsFilename"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Label" Enabled="1" OperationId="262" OperationName="ComputeLabels">
+    <ParamList name="">
+      <Param macro="SELECTED_START_FRAME" name="START_FRAME"/>
+      <Param macro="SELECTED_END_FRAME" name="LAST_FRAME"/>
+      <Param macro="ACTIVE_SUBJECTS" name="SUBJECTS"/>
+      <Param name="RequireLabellingClusters" value="false"/>
+      <Param name="Labeller.UseRobustBooting" value="false"/>
+      <Param name="BootingOutOfRangeBehaviour" value="FreezeAndUnlabelDownTheChain"/>
+      <Param name="Labeller.RigidBodiesMinMatchCount" value="4"/>
+      <Param name="EntranceThreshold" value="0.84999999999999998"/>
+      <Param name="ExitThreshold" value="0.59999999999999998"/>
+      <Param name="BootingQualityHeuristic" value="0"/>
+      <Param name="BootingVersusTrackingHeuristic" value="1"/>
+      <Param name="TrackingQualityHeuristic" value="0.40000000000000002"/>
+      <Param name="UseUnconstrainessScore" value="true"/>
+      <Param name="UnconstrainessEntranceThreshold" value="1"/>
+      <Param name="UnconstrainessExitThreshold" value="1.5"/>
+      <Param name="TrackingPriorImportance" value="1"/>
+      <Param name="TrackingOutOfRangeBehaviour" value="DoNothing"/>
+      <Param name="JointRangeThreshold" value="1"/>
+      <Param name="TrackingJointRangeThreshold" value="1"/>
+      <Param name="Labeller.EnforceRanges" value="false"/>
+      <Param name="Labeller.EnableTrackingLine" value="true"/>
+      <Param name="BootingKinematicFitThreshold" value="-50"/>
+      <Param name="LabelScore" value="1"/>
+      <Param name="MergerMarkerImportance" value="0.5"/>
+      <Param name="UnassignedReconProb" value="1e-10"/>
+      <Param name="UnassignedLabelProb" value="1.0000000000000001e-05"/>
+      <Param name="MarkerFitThreshold" value="1.7976931348623157e+308"/>
+      <Param name="TrackingKinematicFitThreshold" value="-50"/>
+      <Param name="LogMissingMarkerProbability" value="-18.420680743952367"/>
+      <Param name="OutOfRangePenalty" value="5"/>
+      <Param name="UseFlowFitPool" value="false"/>
+      <Param name="IncrementalLabeller" value="false"/>
+      <Param name="AllowSubjectReboot" value="true"/>
+      <Param name="RigidBodyTranslationSlack" value="100"/>
+      <Param name="RigidBodyRotationSlack" value="0.5"/>
+      <Param name="Labeller.UnlabelledBootingLines" value="0"/>
+      <Param name="SINGLE_PASS" value="false"/>
+      <Param name="Local.RemoveTemporaryOutput" value="true"/>
+      <Param name="Local.Pass1Filename"/>
+      <Param name="Local.Pass2Filename"/>
+      <Param name="Local.GraphParamsFilename"/>
+      <Param name="Local.PostGlobalItemsFilename"/>
+    </ParamList>
+  </Entry>
+
+</Pipeline>

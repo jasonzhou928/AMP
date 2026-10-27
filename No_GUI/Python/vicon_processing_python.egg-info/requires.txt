@@ -1,0 +1,7 @@
+numpy>=1.24
+ezc3d>=1.5
+PyYAML>=6.0
+scipy>=1.10
+
+[test]
+pytest>=7

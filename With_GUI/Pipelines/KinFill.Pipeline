@@ -1,0 +1,79 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no" ?>
+<Pipeline>
+
+  <Entry DisplayName="Spline Fill Small Gaps" Enabled="0" OperationId="14" OperationName="FillGapsWoltring">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="0.050000000000000003"/>
+      <Param name="MaxGapFillType" value="1"/>
+      <Param macro="SELECTED_START_FRAME" name="START_FRAME"/>
+      <Param macro="SELECTED_END_FRAME" name="LAST_FRAME"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Fill Head" Enabled="0" OperationId="15" OperationName="FillGapsRigidBody">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="0.25"/>
+      <Param name="MaxGapFillType" value="1"/>
+      <Param macro="SELECTED_START_FRAME" name="FirstFrame"/>
+      <Param macro="SELECTED_END_FRAME" name="LastFrame"/>
+      <Param name="Trajectories" value="LFHD,RFHD,LBHD,RBHD"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Fill Thorax" Enabled="0" OperationId="0" OperationName="FillGapsRigidBody">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="0.25"/>
+      <Param name="MaxGapFillType" value="1"/>
+      <Param macro="SELECTED_START_FRAME" name="FirstFrame"/>
+      <Param macro="SELECTED_END_FRAME" name="LastFrame"/>
+      <Param name="Trajectories" value="C7,T10,CLAV,STRN,RBAK"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Fill Pelvis" Enabled="0" OperationId="16" OperationName="FillGapsRigidBody">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="0.25"/>
+      <Param name="MaxGapFillType" value="1"/>
+      <Param macro="SELECTED_START_FRAME" name="FirstFrame"/>
+      <Param macro="SELECTED_END_FRAME" name="LastFrame"/>
+      <Param name="Trajectories" value="LASI,RASI,LPSI,RPSI"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Pattern Fill" Enabled="0" OperationId="17" OperationName="FillGapsPattern">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="0.10000000000000001"/>
+      <Param name="MaxGapFillType" value="1"/>
+      <Param macro="SELECTED_START_FRAME" name="START_FRAME"/>
+      <Param macro="SELECTED_END_FRAME" name="LAST_FRAME"/>
+      <Param macro="ALL_MARKERS" name="Trajectories"/>
+      <Param macro="AUTO_DONOR_MARKERS" name="DonorTraj"/>
+      <Param name="AllowUnlabeled" value="false"/>
+      <Param name="AllowDifferentSegment" value="false"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Kinematic Fit" Enabled="1" OperationId="756" OperationName="ComputeSubjectMotion">
+    <ParamList name="">
+      <Param macro="SELECTED_START_FRAME" name="START_FRAME"/>
+      <Param macro="SELECTED_END_FRAME" name="LAST_FRAME"/>
+      <Param name="Local.GraphParamsFilename"/>
+      <Param name="Local.PostGlobalItemsFilename"/>
+      <Param macro="ACTIVE_SUBJECTS" name="SUBJECTS"/>
+      <Param name="PriorImportance" value="25"/>
+      <Param name="MeanPoseRatio" value="1"/>
+    </ParamList>
+  </Entry>
+
+  <Entry DisplayName="Kinematic Fill Remaining Gaps" Enabled="1" OperationId="757" OperationName="FillGapsKinematic">
+    <ParamList name="">
+      <Param name="MaxGapToFill" value="10000"/>
+      <Param name="MaxGapFillType" value="0"/>
+      <Param macro="SELECTED_START_FRAME" name="FirstFrame"/>
+      <Param macro="SELECTED_END_FRAME" name="LastFrame"/>
+      <Param macro="ALL_SEGMENTS" name="SegmentToUse"/>
+      <Param macro="ACTIVE_SUBJECTS" name="SUBJECTS"/>
+    </ParamList>
+  </Entry>
+
+</Pipeline>

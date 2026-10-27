@@ -1,0 +1,54 @@
+paths:
+  data_dir: "D:/Users/SixuZhou/MoCap Data"
+  static_trial: "S2_Static.c3d"
+
+flags:
+  preprocess: true
+  gap_fill: true
+  final_check: true
+  export_filled: true
+  qualisys: true
+  multi_subjects: false
+  worker_verbose: false
+  dry_run: false
+  fail_on_missing_clusters: true
+  progress: true
+  parallel_progress: true
+
+thresholds:
+  collection_frequency: 125
+  jump: 15
+  jump_speed: 10
+  gap: 18
+  check: 1
+  pattern_check: 5
+  cluster_jump: [40, 35, 35, 35, 35, 35, 35, 35, 35]
+
+iteration:
+  initial_crop_length: 301
+  crop_step: 150
+  max_iterations: 15
+  heavy_iterations: 2
+  segment_timeout_minutes: 30
+  workers: 4
+  initial_relink_distance: 5
+  segment_relink_distance: 10
+
+# These nine clusters exactly match RunMeCropped.m.
+clusters:
+  - [R_IAS, L_IAS, R_IPS, L_IPS, RGTR, LGTR]
+  - [R_TH1, R_TH2, R_TH3, R_TH4, R_FLE, R_FME, RGTR]
+  - [R_SK1, R_SK2, R_SK3, R_SK4, R_FAL, R_TAM, R_FLE]
+  - [R_FCC, R_FM5, R_FM2, R_FM1, R_FAL, R_TAM]
+  - [L_TH1, L_TH2, L_TH3, L_TH4, L_FLE, L_FME, LGTR]
+  - [L_SK1, L_SK2, L_SK3, L_SK4, L_FAL, L_TAM, L_FLE]
+  - [L_FCC, L_FM5, L_FM2, L_FM1, L_FAL, L_TAM]
+  - [RMW1, RMW2, RMW3, R_FM1, R_FM5, R_FM2]
+  - [LMW1, LMW2, LMW3, L_FM1, L_FM5, L_FM2]
+
+skiplist: []
+subject_name: PK_L
+directions: [fw, bw]
+gap_lengths: [1, 2]
+pickup_gap_lengths: [3, 2, 1]
+coordinates: [x, y, z]
