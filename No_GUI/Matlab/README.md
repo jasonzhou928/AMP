@@ -23,5 +23,3 @@ There are two main scripts to run: RunMe and RunMeCropped
 pipeline. It includes preprocessing, gap filling, final QA, C3D I/O, and only
 the MATLAB functions required by that workflow.
 
-See [README_PYTHON.md](../Python/README_PYTHON.md) for installation,
-configuration, and usage.
