@@ -7,7 +7,7 @@ flags:
   gap_fill: true
   final_check: true
   export_filled: true
-  qualisys: true
+  qualisys: true #set to true if using Qualisys, set to false if using Vicon Nexus
   multi_subjects: false
   worker_verbose: false
   dry_run: false
