@@ -7,7 +7,7 @@ filePath = 'D:\Users\SixuZhou\MoCap Data';
 StaticTrialName = 'S2_Static.c3d';
 skiplist = {};
 
-qualisys_flag = 1; %flag set to true when processing qualisys c3d trials (convert U to C)
+qualisys_flag = 1; %flag set to true when processing qualisys c3d trials (convert U to C), set to false when using Vicon Nexus
 jp_flag = 1; %flag to trigger preprocess section - where fix labels and jumps
 progressBarEnable = 0; %flag to turn on progress bar; if you want to use this, you need to install "Instrument Control" Add-Ons
 workerVerbose = 0; % 0 suppresses detailed output from parfor workers
